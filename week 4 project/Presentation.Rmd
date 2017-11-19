@@ -1,0 +1,100 @@
+---
+title: "App to predict species"
+author: "TM"
+date: "November 19, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction {.smaller}
+
+- This application utilizes machine learning algoithms to predict the species of a plant based on the legnth and width of the petal and Sepal
+- Data is based on the standard R dataset, IRIS 
+
+### User guide  
+
+- User the sliders to enter length and width for Sepal and Petal
+- Prediction appears on the right hand side
+- Code can be found on git hub https://github.com/tristanmaw/Shiny-app-for-predicting-species
+
+### libraries used
+```{r, warning= FALSE, error = FALSE, message = FALSE, echo = TRUE} 
+library(randomForest)
+library(scales)
+library(shiny)
+```
+
+## Model build using Random Forest {.smaller}
+```{r, warning= FALSE, error = FALSE, message = FALSE, echo = TRUE} 
+set.seed(100)
+df <- iris
+n <- nrow(df)
+sample_size <- round(n * 0.5,0)
+training <- df[sample(n),][1:sample_size,]
+testing <- df[sample(n),][(sample_size + 1):n,]
+modfit <- randomForest(Species ~., data = training)
+# Validation
+pred <- predict(modfit,testing)
+testing$predRight <- pred == testing$Species    ##when prection is correct
+table(pred,testing$Species)   ## confusion matrix
+percent(sum(testing$predRight) / nrow(testing))   ## accuracy calc
+```
+Accuracy is `r percent(sum(testing$predRight) / nrow(testing))`
+
+
+## Shiny development - UI code {.smaller}
+- Code can also be found on github https://github.com/tristanmaw/Shiny-app-for-predicting-species
+```{r, warning= FALSE, error = FALSE, message = FALSE, eval = FALSE, echo = TRUE}
+shinyUI(fluidPage(
+  titlePanel("What species is this plant?"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput('SepalLength', 'Sepal Length',value = 5, min = 4, max = 8, step = 0.1),
+      sliderInput('SepalWidth',  'Sepal Wigth',value = 3, min = 1, max = 5, step = 0.1),
+      sliderInput('PetalLength', 'Petal Length',value = 5, min = 1, max = 7, step = 0.1),
+      sliderInput('PetalWidth', 'Petal Width',value = 1, min = 0.1, max = 3, step = 0.1)
+      #submitButton("Submit")
+    ),
+    mainPanel(
+      h3("The predicted species is"),
+      verbatimTextOutput("prediction")
+      
+    )
+  )
+))
+```
+
+## Shiny development - Server code  {.smaller}
+```{r, warning= FALSE, error = FALSE, message = FALSE, eval = FALSE, echo = TRUE}
+shinyServer(function(input, output){
+  set.seed(100)
+  df <- iris
+  n <- nrow(df)
+  sample_size <- round(n * 0.75,0)
+    training <- df[sample(n),][1:sample_size,]
+    modfit <- randomForest(Species ~., data = training)
+    model_pred <- reactive({
+    predict(modfit, newdata = data.frame(Sepal.Length = input$SepalLength, 
+                                         Sepal.Width = input$SepalWidth, 
+                                         Petal.Length = input$PetalLength, 
+                                         Petal.Width = input$PetalWidth))
+  })
+  model_pred2 <- reactive({
+    x <- as.data.frame(model_pred())
+    rownames(x) <- ""
+    colnames(x) <- ""
+    x
+  })
+      output$prediction <- renderPrint({
+    model_pred2()
+  })
+}
+)
+```
+
+
+
+

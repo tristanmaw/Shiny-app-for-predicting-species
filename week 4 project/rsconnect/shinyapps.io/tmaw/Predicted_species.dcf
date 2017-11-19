@@ -1,0 +1,12 @@
+name: Predicted_species
+title: Predicted_species
+username:
+account: tmaw
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 236475
+bundleId: 1084346
+url: https://tmaw.shinyapps.io/Predicted_species/
+when: 1511110533.80173
+asMultiple: FALSE
+asStatic: FALSE
